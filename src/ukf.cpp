@@ -19,7 +19,7 @@ void UKF::Init() {
 * Programming assignment functions:
 *******************************************************************************/
 
-void UKF::AugmentedSigmaPoints(MatrixXd* Xsig_out) {
+void UKF::AugmentedSigmaPoints(MatrixXd *Xsig_out) {
 
     //set state dimension
     int n_x = 5;
@@ -38,7 +38,7 @@ void UKF::AugmentedSigmaPoints(MatrixXd* Xsig_out) {
 
     //set example state
     VectorXd x = VectorXd(n_x);
-    x <<   5.7441,
+    x << 5.7441,
             1.3800,
             2.2049,
             0.5015,
@@ -46,11 +46,11 @@ void UKF::AugmentedSigmaPoints(MatrixXd* Xsig_out) {
 
     //create example covariance matrix
     MatrixXd P = MatrixXd(n_x, n_x);
-    P <<     0.0043,   -0.0013,    0.0030,   -0.0022,   -0.0020,
-            -0.0013,    0.0077,    0.0011,    0.0071,    0.0060,
-            0.0030,    0.0011,    0.0054,    0.0007,    0.0008,
-            -0.0022,    0.0071,    0.0007,    0.0098,    0.0100,
-            -0.0020,    0.0060,    0.0008,    0.0100,    0.0123;
+    P << 0.0043, -0.0013, 0.0030, -0.0022, -0.0020,
+            -0.0013, 0.0077, 0.0011, 0.0071, 0.0060,
+            0.0030, 0.0011, 0.0054, 0.0007, 0.0008,
+            -0.0022, 0.0071, 0.0007, 0.0098, 0.0100,
+            -0.0020, 0.0060, 0.0008, 0.0100, 0.0123;
 
     //create augmented mean vector
     VectorXd x_aug = VectorXd(7);
@@ -66,9 +66,27 @@ void UKF::AugmentedSigmaPoints(MatrixXd* Xsig_out) {
  ******************************************************************************/
 
     //create augmented mean state
+    x_aug << x, 0, 0;
+
     //create augmented covariance matrix
+    MatrixXd Q(2, 2);
+    Q << std_a * std_a, 0,
+            0, std_yawdd * std_yawdd;
+    P_aug.block(0, 0, n_x, n_x) << P;
+    P_aug.block(n_x, n_x, 2, 2) << Q;
+
     //create square root matrix
+    MatrixXd A = P_aug.llt().matrixL();
+
     //create augmented sigma points
+    // col 0 -> xk|k
+    Xsig_aug.col(0) << x_aug;
+
+    // Other points
+    for (size_t n = 0; n < n_aug; n++) {
+        Xsig_aug.col(1 + n) << x_aug + sqrt(lambda + n_aug) * A.col(n);
+        Xsig_aug.col(1 + n_aug + n) << x_aug - sqrt(lambda + n_aug) * A.col(n);
+    }
 
 /*******************************************************************************
  * Student part end
